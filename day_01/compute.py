@@ -1,11 +1,12 @@
 import dataclasses
 import re
 from argparse import ArgumentParser
+from collections import defaultdict
 from pathlib import Path
 from typing import Self
 
 
-@dataclasses.dataclass(kw_only=True)
+@dataclasses.dataclass(kw_only=True, frozen=True)
 class ListData:
     list_a: list[int]
     list_b: list[int]
@@ -24,7 +25,7 @@ class ListData:
         return obj
 
 
-def q1(list_data: ListData) -> int:
+def q1_distance(list_data: ListData) -> int:
     list_a = sorted(list_data.list_a)
     list_b = sorted(list_data.list_b)
     total_distance = 0
@@ -33,10 +34,23 @@ def q1(list_data: ListData) -> int:
     return total_distance
 
 
+def q2_similarity(list_data: ListData) -> int:
+    list_b_index = defaultdict(int)
+    for entry in list_data.list_b:
+        list_b_index[entry] += 1
+
+    total_similarity = 0
+    for a in list_data.list_a:
+        total_similarity += a * list_b_index.get(a, 0)
+    return total_similarity
+
+
 def main(filename: str):
     list_data = ListData.from_file(filename)
-    first = q1(list_data)
+    first = q1_distance(list_data)
     print(f"Q1: total distance: {first}")
+    second = q2_similarity(list_data)
+    print(f"Q2: similarity: {second}")
 
 
 if __name__ == "__main__":
