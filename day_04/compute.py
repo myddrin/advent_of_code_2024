@@ -65,22 +65,22 @@ class Card:
             return self.is_in_word(word, i=i + 1, pos=pos + vect, vect=vect)
         return True
 
-    def is_cross(self, word: str, *, pos: Position) -> bool:
-        assert len(word) == 3
+    def is_cross(self, left_word: str, right_word: str, *, pos: Position) -> bool:
         cross_1 = [
-            pos + Position(-1, -1),
-            pos + Position(1, 1),
+            Position(-1, -1),
+            Position(1, 1),
         ]
         cross_2 = [
-            pos + Position(1, -1),
-            pos + Position(-1, 1),
+            Position(1, -1),
+            Position(-1, 1),
         ]
-        first_char = word[0]
-        last_char = word[2]
-
         for cross in (cross_1, cross_2):
-            forward = self.map.get(cross[0], "") == first_char and self.map.get(cross[1], "") == last_char
-            backward = self.map.get(cross[0], "") == last_char and self.map.get(cross[1], "") == first_char
+            forward = self.is_in_word(left_word, i=0, pos=pos, vect=cross[0]) and self.is_in_word(
+                right_word, i=0, pos=pos, vect=cross[1]
+            )
+            backward = self.is_in_word(left_word, i=0, pos=pos, vect=cross[1]) and self.is_in_word(
+                right_word, i=0, pos=pos, vect=cross[0]
+            )
             if not (forward or backward):
                 return False
 
@@ -99,9 +99,13 @@ class Card:
         if len(word) % 2 == 0:
             raise ValueError("Word needs to have an easy middle")
         middle_idx = len(word) // 2
+        left_word = "".join(reversed(word[: middle_idx + 1]))
+        right_word = word[middle_idx:]
+
         found = []
         for middle_position in self.rev_map[word[middle_idx]]:
-            if self.is_cross(word, pos=middle_position):
+            print(f"Looking for {left_word=} {right_word=} from {middle_position=}")
+            if self.is_cross(left_word, right_word, pos=middle_position):
                 found.append(middle_position)
         return found
 
