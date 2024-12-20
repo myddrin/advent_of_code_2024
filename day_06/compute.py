@@ -1,8 +1,15 @@
 import dataclasses
 from argparse import ArgumentParser
+from copy import deepcopy
 from enum import Enum
 from pathlib import Path
 from typing import Self, ClassVar
+
+
+class Looping(Exception):
+    def __init__(self, guard_path: list["Position"]):
+        self.guard_path = guard_path
+        super().__init__("Guard round is looping")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,6 +65,9 @@ class Guard:
             case _:
                 raise NotImplementedError(f"For {self.facing.name}")
 
+    def key(self) -> tuple[Position, Direction]:
+        return self.location, self.facing
+
     def __repr__(self):
         return f"@ {self.location} facing {self.facing.name}"
 
@@ -108,16 +118,20 @@ class Map:
     def contains_position(self, p: Position) -> bool:
         return 0 <= p.x < self.width and 0 <= p.y < self.height
 
-    def predict_guard(self) -> list[Position]:
+    def predict_guard(self) -> set[Position]:
         current_guard = Guard(
             location=self.guard.location,
             facing=self.guard.facing,
         )
-        visited = [self.guard.location]
-        print(f"Starting {current_guard}")
+        visited = {current_guard.key()}
+        guard_path = [self.guard.location]
         while self.contains_position(current_guard.location):
-            if current_guard.location != visited[-1]:
-                visited.append(current_guard.location)
+            if current_guard.location != guard_path[-1]:
+                guard_path.append(current_guard.location)
+                current_key = current_guard.key()
+                if current_key in visited:
+                    raise Looping(guard_path)
+                visited.add(current_key)
 
             next_position = current_guard.location + current_guard.facing.value
             if next_position in self.obstacles:
@@ -125,13 +139,30 @@ class Map:
             else:
                 current_guard.location = next_position
 
-        return visited
+        return set(guard_path)
+
+    def brute_force_obstructions(self, attempts: set[Position]) -> int:
+        count = 0
+        for position in attempts:
+            print(f"Attempt at {position}")
+            if position == self.guard.location:
+                continue
+            try:
+                dup = deepcopy(self)
+                dup.obstacles.add(position)
+                dup.predict_guard()
+            except Looping:
+                count += 1
+        return count
 
 
 def main(filename: str):
     map = Map.from_file(filename)
-    q1 = len(set(map.predict_guard()))
+    q1_visited = map.predict_guard()
+    q1 = len(q1_visited)
     print(f"Q1: the guard visited {q1} locations")
+    q2 = map.brute_force_obstructions(q1_visited)
+    print(f"Q2: {q2} obstructions possible")
 
 
 if __name__ == "__main__":

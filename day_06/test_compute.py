@@ -17,9 +17,19 @@ def input_txt() -> Map:
 
 def test_q1_small(small_ex_txt):
     visited = small_ex_txt.predict_guard()
-    assert len(visited) == 45
-    assert len(set(visited)) == 41
+    assert len(visited) == 41
+
+
+def test_q2_small(small_ex_txt):
+    visited = small_ex_txt.predict_guard()
+    assert small_ex_txt.brute_force_obstructions(visited) == 6
 
 
 def test_q1_input(input_txt):
-    assert len(set(input_txt.predict_guard())) == 4973
+    assert len(input_txt.predict_guard()) == 4973
+
+
+@pytest.mark.slow
+def test_q2_input(input_txt):
+    visited = input_txt.predict_guard()
+    assert input_txt.brute_force_obstructions(visited) == 1482
