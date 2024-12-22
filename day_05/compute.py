@@ -2,6 +2,7 @@ import dataclasses
 import re
 from argparse import ArgumentParser
 from collections import defaultdict
+from copy import copy
 from pathlib import Path
 from typing import Self, ClassVar
 
@@ -29,6 +30,55 @@ class Updates:
             return self.pages[len(self.pages) // 2]
         else:
             raise ValueError("Odd update")
+
+
+@dataclasses.dataclass
+class Node:
+    """Node in a graph of page order"""
+
+    page: int
+    prev_nodes: set[Self] = dataclasses.field(default_factory=set)
+
+    def __hash__(self):
+        return hash(self.page)
+
+    @classmethod
+    def build_graph(cls, active_rules: RuleMap) -> dict[int, Self]:
+        graph = {}
+
+        unique_rules = set()
+        for rules in active_rules.values():
+            unique_rules.update(rules)
+
+        for rule in unique_rules:
+            if not (first_node := graph.get(rule.first)):
+                first_node = Node(rule.first)
+                graph[rule.first] = first_node
+            if not (second_node := graph.get(rule.second)):
+                second_node = Node(rule.second)
+                graph[rule.second] = second_node
+
+            second_node.prev_nodes.add(first_node)
+
+        return graph
+
+    @classmethod
+    def generate_order(cls, pages: list[int], graph: dict[int, Self]) -> list[int]:
+        pending = copy(graph)
+        result = [p for p in pages if p not in pending]
+
+        while pending:
+            to_insert = []
+            for node in pending.values():
+                if not any((second.page in pending for second in node.prev_nodes)):
+                    to_insert.append(node.page)
+            if not to_insert:
+                raise RuntimeError("Nothing to do")
+            for page in to_insert:
+                pending.pop(page)
+                result.append(page)
+
+        return result
 
 
 class SetOfRules:
@@ -71,20 +121,13 @@ class SetOfRules:
 
         return True
 
-    def _reorder_pages(self, pages: list[int], active_rules: RuleMap) -> list[int]:
-        print(f"Attempting to reorder {pages=} using {active_rules}")
-        update_pages = list(pages)
-        unique_rules = set()
-        for rules in active_rules.values():
-            unique_rules.update(rules)
-        for rule in unique_rules:
-            first_idx = update_pages.index(rule.first)
-            second_idx = update_pages.index(rule.second)
-            if first_idx > second_idx:
-                # print(f"Injecting {rule.second} just before {rule.first} at idx={first_idx}")
-                update_pages.pop(second_idx)
-                update_pages.insert(first_idx, rule.second)
-        return update_pages
+    def _graph_reorder_pages(self, pages: list[int], active_rules: RuleMap) -> list[int]:
+        print(f"Graph attempt to reorder {pages=} using {active_rules}")
+        graph = Node.build_graph(active_rules)
+        result = Node.generate_order(pages, graph)
+        if not self._check_valid_update(*self._find_rules(result)):
+            raise RuntimeError("Generated invalid order!")
+        return result
 
     def add_update(self, line: str) -> bool:
         if "," not in line:
@@ -93,8 +136,7 @@ class SetOfRules:
         active_rules, update_idx = self._find_rules(pages)
         is_valid = self._check_valid_update(active_rules, update_idx)
         if not is_valid:
-            pages = self._reorder_pages(pages, active_rules)
-            assert self._check_valid_update(*self._find_rules(pages))
+            pages = self._graph_reorder_pages(pages, active_rules)
         self.updates.append(Updates(pages=pages, was_reordered=not is_valid))
         return True
 
@@ -119,10 +161,16 @@ def q1_middle_page(data: SetOfRules) -> int:
     return sum((update.middle_page for update in data.updates if not update.was_reordered))
 
 
+def q2_reordered_middle_page(data: SetOfRules) -> int:
+    return sum((update.middle_page for update in data.updates if update.was_reordered))
+
+
 def main(filename: str):
     data = SetOfRules.from_file(filename)
     q1 = q1_middle_page(data)
     print(f"Q1: {q1} middle page checksum")
+    q2 = q2_reordered_middle_page(data)
+    print(f"Q2: {q2} after reordered middle page checksum")
 
 
 if __name__ == "__main__":
