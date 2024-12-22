@@ -22,6 +22,8 @@ markers = [
 
 [tool.ruff]
 line-length = 120
+fix = true
+preview = true
 
 [build-system]
 requires = ["poetry-core"]
