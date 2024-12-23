@@ -13,6 +13,11 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
+def concatenate(a: int, b: int) -> int:
+    n = len(str(b))
+    return a * (10 * n) + b
+
+
 Operator = Callable[[int, int], int]
 
 
@@ -45,27 +50,41 @@ class Equation:
         # print(f"{self} with {operations} = {current}")
         return current
 
-    def brute_resolve(self) -> list[Operator] | None:
-        pos = [add, mult]
-        prod_args = [pos for _ in range(len(self.numbers) - 1)]
+    def brute_resolve(self, *, operations: list[Operator]) -> list[Operator] | None:
+        prod_args = [operations for _ in range(len(self.numbers) - 1)]
         attempts = list(product(*prod_args))
+        # print(f"{self} with {len(attempts)} permutations")
+        failed = []
         for op in attempts:
-            if self.calculate(op) == self.total:
+            value = self.calculate(op)
+            failed.append(f"  {op} = {value} [{value == self.total}]")
+            if value == self.total:
                 return op
+        print(f"  -> {self} noop")
         return None
 
 
 DataSet = list[Equation]
 
 
+def brute_resolve(dataset: DataSet, operations: list[Operator]) -> int:
+    return sum((equation.total for equation in dataset if equation.brute_resolve(operations=operations) is not None))
+
+
 def q1_brute(dataset: DataSet) -> int:
-    return sum((equation.total for equation in dataset if equation.brute_resolve() is not None))
+    return brute_resolve(dataset, operations=[add, mult])
+
+
+def q2_brute(dataset: DataSet) -> int:
+    return brute_resolve(dataset, operations=[add, mult, concatenate])
 
 
 def main(filename: str):
     dataset = Equation.from_file(filename)
     q1 = q1_brute(dataset)
     print(f"Q1: checksum {q1}")
+    q2 = q2_brute(dataset)
+    print(f"Q2: checksum {q2}")
 
 
 if __name__ == "__main__":
