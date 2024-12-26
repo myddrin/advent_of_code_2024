@@ -20,12 +20,13 @@ def test_q1_small(small_ex_txt):
 
 
 def test_q2_small(small_ex_txt):
-    assert q2_brute(small_ex_txt) == 11387
+    assert q2_brute(small_ex_txt, verbose=False) == 11387
 
 
 def test_q1_input(input_txt):
     assert q1_brute(input_txt) == 3312271365652
 
 
+@pytest.mark.slow
 def test_q2_input(input_txt):
-    assert q2_brute(input_txt) > 8059768933233
+    assert q2_brute(input_txt, verbose=False) == 509463489296712
