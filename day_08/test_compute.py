@@ -52,12 +52,38 @@ class TestData:
         assert obj.populate_antinodes() == len(expected)
         assert obj.antinodes_map == expected
 
+    def test_populate_antinodes_resonance(self):
+        obj = Data(10, 10, {"T": [Position(0, 0), Position(3, 1), Position(1, 2)]})
+        expected = {
+            Position(0, 0): ["T"],
+            Position(5, 0): ["T"],
+            Position(3, 1): ["T"],
+            Position(1, 2): ["T"],
+            Position(6, 2): ["T"],
+            Position(9, 3): ["T"],
+            Position(2, 4): ["T"],
+            Position(3, 6): ["T"],
+            Position(4, 8): ["T"],
+        }
+        assert obj.populate_antinodes(limit=None) == len(expected)
+        assert obj.antinodes_map == expected
+
 
 def test_q1_small(small_ex_txt):
     found = small_ex_txt.populate_antinodes()
     assert found == 14
 
 
+def test_q2_small(small_ex_txt):
+    found = small_ex_txt.populate_antinodes(limit=None)
+    assert found == 34
+
+
 def test_q1(input_txt):
     found = input_txt.populate_antinodes()
-    assert found < 303
+    assert found == 301
+
+
+def test_q2(input_txt):
+    found = input_txt.populate_antinodes(limit=None)
+    assert found == 1019
