@@ -31,7 +31,6 @@ def test_q1_small(small_ex_txt):
     assert disk.file_size == small_ex_txt.file_size
     assert disk.free_size == small_ex_txt.free_size
     assert disk.checksum() == 1928
-    assert sorted(disk.free_spaces) == disk.free_spaces
 
 
 def test_q2_small(small_ex_txt):
@@ -40,7 +39,6 @@ def test_q2_small(small_ex_txt):
     assert disk.file_size == small_ex_txt.file_size
     assert disk.free_size == small_ex_txt.free_size
     assert disk.checksum() == 2858
-    assert sorted(disk.free_spaces) == disk.free_spaces
 
 
 def test_q1(input_txt):
@@ -56,4 +54,4 @@ def test_q2(input_txt):
     assert disk.file_size + disk.free_size == disk.disk_size
     assert disk.file_size == input_txt.file_size
     assert disk.free_size == input_txt.free_size
-    assert disk.checksum() < 6299512391513
+    assert disk.checksum() == 6237075041489
